@@ -1,0 +1,19 @@
+image_width: 1920
+image_height: 1080
+camera_name: airsim_stereo
+camera_matrix:
+  rows: 3
+  cols: 3
+  data: [959.661112, 0, 959.385435, 0, 959.693478, 539.533360, 0, 0, 1]
+distortion_coefficients:
+  rows: 1
+  cols: 5
+  data: [-0.000591, 0.000519, 0.000001, -0.000030, 0]
+rectification_matrix:
+  rows: 3
+  cols: 3
+  data: [1, 0, 0, 0, 1, 0, 0, 0, 1]
+projection_matrix:
+  rows: 3
+  cols: 4
+  data: [959.779968, 0, 959.290331, 0, 0, 959.867798, 539.535675, 0, 0, 0, 1, 0]

@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 #!/usr/bin/env python2
 # Software License Agreement (BSD License)
 #
@@ -34,45 +33,64 @@
 #
 # Revision $Id$
 
-
 import rospy
-import airsim
 import cv2
-import numpy as np
-import time
 import sys
+import numpy as np
 
 from cv_bridge import CvBridge, CvBridgeError
 
-from std_msgs.msg import String
 from sensor_msgs.msg import Image
 
-client = airsim.MultirotorClient(ip="192.168.210.7") #connect to the AirsSim simulator
-client.confirmConnection() #confirm connection
+class image_encoder:
 
-def talker():
-    pub = rospy.Publisher("/cam0/image_raw", Image, queue_size = 10)
-    rospy.init_node('leftStereo', anonymous=False)
-    bridge = CvBridge()
-    rate = rospy.Rate(10) # 10hz
-    while not rospy.is_shutdown():
-        rawImage = client.simGetImage("2", airsim.ImageType.Scene)
-        png = cv2.imdecode(airsim.string_to_uint8_array(rawImage), cv2.IMREAD_UNCHANGED)
-        cv2.imshow("Left Cam1", png)
-        pub.publish(bridge.cv2_to_imgmsg(png))
-        imu_data = client.getImuData(imu_name = "", vehicle_name = "")
-        print(imu_data)
+    def __init__(self):
+        self.encodeLeft = rospy.Publisher("/stereo/left/image_raw", Image, queue_size = 10)
+        self.encodeRight = rospy.Publisher("/stereo/right/image_raw", Image, queue_size = 10)
+        self.leftFeed = rospy.Subscriber("/left/image_encode", Image, self.callbackLeft)
+        self.rightFeed = rospy.Subscriber("/right/image_encode", Image, self.callbackRight)
+        self.bridge = CvBridge()
 
-        #hello_str = "hello world %s" % rospy.get_time()
-        #rospy.loginfo(hello_str)
-        #pub.publish(hello_str)
-        rate.sleep()
+    def callbackLeft(self,data):
+        try:
+            image_left = self.bridge.imgmsg_to_cv2(data, desired_encoding='passthrough')
+        except CvBridgeError as e:
+            print(e)
 
-        if cv2.waitKey(1) & 0xff ==ord(' '):
-            break
+        bgrLeft = cv2.cvtColor(image_left, cv2.COLOR_BGRA2BGR)
+
+        try:
+            self.encodeLeft.publish(self.bridge.cv2_to_imgmsg(bgrLeft, "bgr8"))
+        except CvBridgeError as e:
+            print(e)
+
+        #cv2.imshow("left", image_left)
+        #cv2.waitKey(3)
+
+    def callbackRight(self,data):
+        try:
+            image_right = self.bridge.imgmsg_to_cv2(data, desired_encoding='passthrough')
+        except CvBridgeError as e:
+            print(e)
+
+        bgrRight = cv2.cvtColor(image_right, cv2.COLOR_BGRA2BGR)
+
+        try:
+            self.encodeRight.publish(self.bridge.cv2_to_imgmsg(bgrRight, "bgr8"))
+        except CvBridgeError as e:
+            print(e)
+
+        #cv2.imshow("right", image_right)
+        #cv2.waitKey(3)
+
+def main(args):
+    rospy.init_node('encoded_data', anonymous=False)
+    ie = image_encoder()
+    try:
+        rospy.spin()
+    except rospy.ROSInterruptException:
+        print("Shutting Down")
+        pass
 
 if __name__ == '__main__':
-    try:
-        talker()
-    except rospy.ROSInterruptException:
-        pass
+    main(sys.argv)

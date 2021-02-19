@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-#!/usr/bin/env python2
 # Software License Agreement (BSD License)
 #
 # Copyright (c) 2008, Willow Garage, Inc.
@@ -51,21 +50,15 @@ client = airsim.MultirotorClient(ip="192.168.210.7") #connect to the AirsSim sim
 client.confirmConnection() #confirm connection
 
 def talker():
-    pub = rospy.Publisher("/cam0/image_raw", Image, queue_size = 10)
-    rospy.init_node('leftStereo', anonymous=False)
+    pub = rospy.Publisher("/cam1/image_raw", Image, queue_size = 10)
+    rospy.init_node('rightStereo', anonymous=False)
     bridge = CvBridge()
     rate = rospy.Rate(10) # 10hz
     while not rospy.is_shutdown():
-        rawImage = client.simGetImage("2", airsim.ImageType.Scene)
+        rawImage = client.simGetImage("1", airsim.ImageType.Scene)
         png = cv2.imdecode(airsim.string_to_uint8_array(rawImage), cv2.IMREAD_UNCHANGED)
-        cv2.imshow("Left Cam1", png)
+        cv2.imshow("Right Cam1", png)
         pub.publish(bridge.cv2_to_imgmsg(png))
-        imu_data = client.getImuData(imu_name = "", vehicle_name = "")
-        print(imu_data)
-
-        #hello_str = "hello world %s" % rospy.get_time()
-        #rospy.loginfo(hello_str)
-        #pub.publish(hello_str)
         rate.sleep()
 
         if cv2.waitKey(1) & 0xff ==ord(' '):

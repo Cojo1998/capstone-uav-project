@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-#!/usr/bin/env python2
 # Software License Agreement (BSD License)
 #
 # Copyright (c) 2008, Willow Garage, Inc.
@@ -34,7 +33,6 @@
 #
 # Revision $Id$
 
-
 import rospy
 import airsim
 import cv2
@@ -46,33 +44,64 @@ from cv_bridge import CvBridge, CvBridgeError
 
 from std_msgs.msg import String
 from sensor_msgs.msg import Image
+from sensor_msgs.msg import Imu
 
-client = airsim.MultirotorClient(ip="192.168.210.7") #connect to the AirsSim simulator
+client = airsim.MultirotorClient(ip="10.0.0.53") #connect to the AirsSim simulator #192.168.210.7
 client.confirmConnection() #confirm connection
 
 def talker():
-    pub = rospy.Publisher("/cam0/image_raw", Image, queue_size = 10)
-    rospy.init_node('leftStereo', anonymous=False)
+    #pubImu = rospy.Publisher("/imuTest", Imu, queue_size = 10)
+    pubLeft = rospy.Publisher("/left/image_encode", Image, queue_size = 10)
+    pubRight = rospy.Publisher("/right/image_encode", Image, queue_size = 10)
+    rospy.init_node('airsim_data', anonymous=False)
     bridge = CvBridge()
+    #imu = Imu()
+    counter = 0
     rate = rospy.Rate(10) # 10hz
     while not rospy.is_shutdown():
-        rawImage = client.simGetImage("2", airsim.ImageType.Scene)
-        png = cv2.imdecode(airsim.string_to_uint8_array(rawImage), cv2.IMREAD_UNCHANGED)
-        cv2.imshow("Left Cam1", png)
-        pub.publish(bridge.cv2_to_imgmsg(png))
-        imu_data = client.getImuData(imu_name = "", vehicle_name = "")
-        print(imu_data)
+        rawImageLeft = client.simGetImage("2", airsim.ImageType.Scene)
+        pngLeft = cv2.imdecode(airsim.string_to_uint8_array(rawImageLeft), cv2.IMREAD_UNCHANGED)
+        cv2.imshow("Left Cam1", pngLeft)
+        try:
+            pubLeft.publish(bridge.cv2_to_imgmsg(pngLeft))
+        except CvBridgeError as e:
+            print(e)
 
-        #hello_str = "hello world %s" % rospy.get_time()
-        #rospy.loginfo(hello_str)
-        #pub.publish(hello_str)
+        rawImageRight = client.simGetImage("1", airsim.ImageType.Scene)
+        pngRight = cv2.imdecode(airsim.string_to_uint8_array(rawImageRight), cv2.IMREAD_UNCHANGED)
+        cv2.imshow("Right Cam1", pngRight)
+        try:
+            pubRight.publish(bridge.cv2_to_imgmsg(pngRight, encoding="passthrough"))
+        except CvBridgeError as e:
+            print(e)
+
+        #counter += 1
+        #imu_data = client.getImuData(imu_name = "", vehicle_name = "")
+        #imu.header.seq = counter
+        #imu.header.frame_id = "imu4"
+        #imu.header.stamp = rospy.Time.now()
+        #imu.angular_velocity.x = imu_data.angular_velocity.x_val
+        #imu.angular_velocity.y = imu_data.angular_velocity.y_val
+        #imu.angular_velocity.z = imu_data.angular_velocity.z_val
+        #imu.linear_acceleration.x = imu_data.linear_acceleration.x_val
+        #imu.linear_acceleration.y = imu_data.linear_acceleration.y_val
+        #imu.linear_acceleration.z = imu_data.linear_acceleration.z_val
+        #imu.orientation.x = imu_data.orientation.x_val
+        #imu.orientation.y = imu_data.orientation.y_val
+        #imu.orientation.z = imu_data.orientation.z_val
+        #imu.orientation.w = imu_data.orientation.w_val
+        #pubImu.publish(imu)
+
         rate.sleep()
 
         if cv2.waitKey(1) & 0xff ==ord(' '):
             break
 
+
 if __name__ == '__main__':
     try:
         talker()
+
     except rospy.ROSInterruptException:
         pass
+

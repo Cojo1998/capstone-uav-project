@@ -160,6 +160,10 @@ include_directories(
 ## in contrast to setup.py, you can choose the destination
 catkin_install_python(PROGRAMS
   scripts/stereo_left.py
+  scripts/stereo_right.py
+  scripts/airsim_stereo_cam.py
+  scripts/yaml_to_camera_info.py
+  scripts/encode_data.py
   DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
 )
 
